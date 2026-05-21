@@ -52,15 +52,15 @@
 
 ### Day 2 (3 hours): BB Code Constructor
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Polynomial ring arithmetic in F_4[x,y]/⟨x^ℓ-1, y^m-1⟩
-- [ ] Matrix representation of polynomials (circulant-like structure)
-- [ ] BB code constructor: input (A,B), output H = [A|B]
-- [ ] Choose 4 specific polynomial pairs for (ℓ,m) instances
-- [ ] Verify H sparsity structure matches expected pattern
-- [ ] Upload bb_constructor.py to Project
+- [x] Polynomial ring arithmetic in F_4[x,y]/⟨x^ℓ-1, y^m-1⟩
+- [x] Matrix representation of polynomials (circulant-like structure)
+- [x] BB code constructor: input (A,B), output H = [A|B]
+- [x] Choose 4 specific polynomial pairs for (ℓ,m) instances
+- [x] Verify H sparsity structure matches expected pattern
+- [x] Upload bb_constructor.py to Project
 
 **Deliverable:** bb_constructor.py with 4 working code instances
 
