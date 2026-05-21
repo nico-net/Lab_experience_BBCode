@@ -14,11 +14,11 @@
 - [x] Create Claude Project
 - [x] Upload PROJECT_BRIEF.md, PIPELINE.md, DECISIONS_LOG.md
 - [x] Upload reference papers (BB_code_DNA__4_.pdf, TR2001-16.pdf)
-- [ ] Send email to professors (framing, venue, timeline)
+- [x] Send email to professors (framing, venue, timeline)
 - [ ] Receive professor approval
 - [ ] Lock framing: Analog 3 + Section VII
 - [ ] Lock venue: IEEE COMML + arXiv
-- [ ] Set git repository
+- [x] Set git repository
 
 **Deliverable:** Written approval from professors, git repo initialized
 
@@ -32,17 +32,17 @@
 
 ### Day 1 (3 hours): GF(4) Library
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Python environment setup (numpy, scipy, matplotlib, tqdm)
-- [ ] GF(4) arithmetic library:
-  - [ ] Addition table (XOR of 2-bit representations)
-  - [ ] Multiplication table (F_4 = F_2[ω]/⟨ω²+ω+1⟩)
-  - [ ] Multiplicative inverse, trace function
-  - [ ] Unit tests against known values
-- [ ] Upload gf4_lib.py to Claude Project for review
-- [ ] Log polynomial representation choice in DECISIONS_LOG.md
+- [x] Python environment setup (numpy, scipy, matplotlib, tqdm)
+- [x] GF(4) arithmetic library:
+  - [x] Addition table (XOR of 2-bit representations)
+  - [x] Multiplication table (F_4 = F_2[ω]/⟨ω²+ω+1⟩)
+  - [x] Multiplicative inverse, trace function
+  - [x] Unit tests against known values
+- [x] Upload gf4_lib.py to Claude Project for review
+- [x] Log polynomial representation choice in DECISIONS_LOG.md
 
 **Deliverable:** gf4_lib.py passing all unit tests
 
