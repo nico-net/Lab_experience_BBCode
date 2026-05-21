@@ -200,6 +200,103 @@ def gf4_matmul(A, B):
     return np.bitwise_xor.reduce(prod, axis=1).astype(np.uint8)
 
 
+def gf4_matvec(M, v):
+    """
+    Matrix-vector product M · v over F_4.
+
+    M: shape (r, n), v: shape (n,). Returns shape (r,) in uint8.
+    Implemented as table-lookup multiplication followed by XOR-reduction.
+    """
+    M_arr = np.asarray(M, dtype=np.uint8)
+    v_arr = np.asarray(v, dtype=np.uint8)
+    if M_arr.ndim != 2 or v_arr.ndim != 1 or M_arr.shape[1] != v_arr.shape[0]:
+        raise ValueError(
+            f"Incompatible shapes for gf4_matvec: {M_arr.shape} · {v_arr.shape}"
+        )
+    prod = _MUL_TABLE[M_arr, v_arr[None, :]]            # (r, n)
+    return np.bitwise_xor.reduce(prod, axis=1).astype(np.uint8)
+
+
+def gf4_rref(M):
+    """
+    Reduce M (uint8 array of F_4 elements) to reduced row echelon form.
+
+    Returns (R, pivot_cols) where R is in RREF (each pivot is 1, and the
+    pivot column has zeros elsewhere) and pivot_cols is the list of column
+    indices containing pivots, in increasing order.
+
+    Standard Gauss-Jordan over F_4. The matrix is copied; M is not mutated.
+    """
+    R = np.asarray(M, dtype=np.uint8).copy()
+    n_rows, n_cols = R.shape
+    pivot_cols: list[int] = []
+    r = 0  # next row to fill with a pivot
+
+    for c in range(n_cols):
+        if r >= n_rows:
+            break
+        # Find a pivot row at or below row r with a nonzero in column c.
+        pivot_row = -1
+        for rr in range(r, n_rows):
+            if R[rr, c] != 0:
+                pivot_row = rr
+                break
+        if pivot_row < 0:
+            continue  # column c has no pivot; move on
+        # Swap pivot up.
+        if pivot_row != r:
+            R[[r, pivot_row]] = R[[pivot_row, r]]
+        # Normalize the pivot row so the leading entry is 1.
+        inv = _INV_TABLE[R[r, c]]
+        if inv != 1:
+            R[r] = _MUL_TABLE[R[r], inv]
+        # Eliminate column c from every other row.
+        for rr in range(n_rows):
+            if rr != r and R[rr, c] != 0:
+                factor = R[rr, c]
+                R[rr] ^= _MUL_TABLE[R[r], factor]
+        pivot_cols.append(c)
+        r += 1
+
+    return R, pivot_cols
+
+
+def gf4_rank(M):
+    """Rank of M over F_4 (number of pivots in RREF)."""
+    _, pivots = gf4_rref(M)
+    return len(pivots)
+
+
+def gf4_null_space_basis(M):
+    """
+    Basis of the right null space {v : M·v = 0} of M over F_4.
+
+    Returned as a 2D array of shape (n - rank, n) whose rows are the basis
+    vectors. Returns a (0, n) array if M has full column rank.
+
+    For each free column c_f, one basis vector is constructed by setting
+    x[c_f] = 1, x[c_g] = 0 for every other free column c_g, and reading off
+    the pivot variables from the RREF rows. In characteristic 2 the pivot
+    value is just R[i, c_f] (no sign flip needed).
+    """
+    M_arr = np.asarray(M, dtype=np.uint8)
+    n_rows, n_cols = M_arr.shape
+    R, pivot_cols = gf4_rref(M_arr)
+    pivot_set = set(pivot_cols)
+    free_cols = [c for c in range(n_cols) if c not in pivot_set]
+
+    if not free_cols:
+        return np.zeros((0, n_cols), dtype=np.uint8)
+
+    basis = np.zeros((len(free_cols), n_cols), dtype=np.uint8)
+    for k, c_f in enumerate(free_cols):
+        basis[k, c_f] = 1
+        # Pivot rows tell us how the pivot variables depend on the free ones.
+        for i, c_p in enumerate(pivot_cols):
+            basis[k, c_p] = R[i, c_f]
+    return basis
+
+
 # ===========================================================================
 # Unit tests
 # ===========================================================================
@@ -326,6 +423,71 @@ def _test_matmul_identity() -> None:
     assert np.array_equal(gf4_matmul(A, I), A)
 
 
+def _test_matvec_basic() -> None:
+    # Hand-computable check: [1, ω] · [ω², 1]ᵀ = 1·ω² + ω·1 = ω² + ω = 1.
+    M = np.array([[ONE, OMEGA]], dtype=np.uint8)
+    v = np.array([OMEGA2, ONE], dtype=np.uint8)
+    assert int(gf4_matvec(M, v)[0]) == ONE
+    # Vectorized vs. loop-based matmul agreement on a 4×4 example.
+    A = np.array(
+        [
+            [1, 2, 3, 0],
+            [0, 1, 2, 3],
+            [3, 0, 1, 2],
+            [2, 3, 0, 1],
+        ],
+        dtype=np.uint8,
+    )
+    x = np.array([2, 3, 1, 2], dtype=np.uint8)
+    direct = gf4_matvec(A, x)
+    via_matmul = gf4_matmul(A, x.reshape(-1, 1)).ravel()
+    assert np.array_equal(direct, via_matmul)
+
+
+def _test_rref_simple() -> None:
+    # 2x2 identity is already in RREF.
+    I = np.eye(2, dtype=np.uint8)
+    R, pivots = gf4_rref(I)
+    assert pivots == [0, 1]
+    assert np.array_equal(R, I)
+
+
+def _test_rank_rank_deficient() -> None:
+    # Two F_4-dependent rows: [1, ω] and [ω, ω²] = ω · [1, ω]. Rank 1.
+    M = np.array([[ONE, OMEGA], [OMEGA, OMEGA2]], dtype=np.uint8)
+    assert gf4_rank(M) == 1
+    # Identity matrices have full rank.
+    for n in (1, 3, 5):
+        assert gf4_rank(np.eye(n, dtype=np.uint8)) == n
+    # Zero matrix has rank 0.
+    assert gf4_rank(np.zeros((4, 4), dtype=np.uint8)) == 0
+
+
+def _test_null_space_residual() -> None:
+    # Every null-space basis vector v must satisfy M · v = 0, exactly.
+    M = np.array(
+        [
+            [ONE, OMEGA,  OMEGA2, ONE],
+            [ZERO, ONE,   OMEGA,  OMEGA2],
+        ],
+        dtype=np.uint8,
+    )
+    basis = gf4_null_space_basis(M)
+    # Dimension: 4 columns − 2 pivots = 2 free vars → 2 basis vectors.
+    assert basis.shape == (2, 4)
+    for v in basis:
+        assert np.all(gf4_matvec(M, v) == 0)
+    # Basis vectors are F_4-linearly independent: stack and check rank.
+    assert gf4_rank(basis) == 2
+
+
+def _test_null_space_full_rank() -> None:
+    # If M has full column rank, null space is trivial (no basis vectors).
+    M = np.eye(3, dtype=np.uint8)
+    basis = gf4_null_space_basis(M)
+    assert basis.shape == (0, 3)
+
+
 def _run_all_tests() -> None:
     tests = [
         _test_addition_table,
@@ -339,6 +501,11 @@ def _run_all_tests() -> None:
         _test_array_broadcasting,
         _test_pair_roundtrip,
         _test_matmul_identity,
+        _test_matvec_basic,
+        _test_rref_simple,
+        _test_rank_rank_deficient,
+        _test_null_space_residual,
+        _test_null_space_full_rank,
     ]
     for t in tests:
         t()
