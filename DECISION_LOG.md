@@ -12,11 +12,11 @@ Outcome: [Did it work? Update later if needed]
 
 ## Phase 0: Setup
 
-### 2026-XX-XX: Project created
+### 2026-05-21: Project created
 Rationale: Maintain persistent context across 4-week sprint, enable efficient code review
 Outcome: [TBD]
 
-### 2026-XX-XX: Chose Analog 3 + Section VII approach
+### 2026-05-21: Chose Analog 3 + Section VII approach
 Rationale: Clean GF(4)-linear construction for 1-month timeline; quantum connection via structural bridge; clear path to extension paper
 Alternatives considered: Analog 2 (CRSS additive code - too complex for timeline), Analog 1 (binary - throws away GF(4) framing)
 Outcome: [TBD]
