@@ -87,15 +87,15 @@
 
 ### Day 4 (3 hours): Channel and Evaluation Framework
 
-**Status:** [ ] Complete
+**Status:** [x]  Complete
 
 **Tasks:**
-- [ ] Quaternary symmetric channel: i.i.d. GF(4) errors with rate p
-- [ ] evaluate(code, decoder, p, num_trials) function:
-  - [ ] Returns FER, BER, error bars (95% CI)
-  - [ ] Logs trial count and random seed for reproducibility
-- [ ] Reproducible random seeding
-- [ ] Upload channel.py and evaluation.py to Project
+- [x]  Quaternary symmetric channel: i.i.d. GF(4) errors with rate p
+- [x]  evaluate(code, decoder, p, num_trials) function:
+  - [x]  Returns FER, BER, error bars (95% CI)
+  - [x]  Logs trial count and random seed for reproducibility
+- [x]  Reproducible random seeding
+- [x]  Upload channel.py and evaluation.py to Project
 
 **Deliverable:** Evaluation framework ready for decoder benchmarking
 

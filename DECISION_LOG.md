@@ -105,3 +105,48 @@ Validation: every reported value satisfies basis_min_weight ≥ d (consistency),
 
 Outcome: Parameter table ready for paper Section III.
 
+### Day 4 (2026-05-24): Channel and evaluation framework
+
+Channel: implemented `channel.QSC` as the F_4 analog of the BSC. Per symbol,
+Pr[no error] = 1 − p; Pr[error to each of 1, ω, ω²] = p/3. Noise is
+additive over F_4 (XOR on the uint8 representation), so the channel is
+symmetric over F_4 by construction. Capacity per symbol C(p) = 2 − H_2(p)
+− p·log_2 3 is exposed for downstream EXIT/threshold sanity checks.
+
+Evaluation harness: `evaluation.evaluate(code, decoder, p, num_trials, seed)`
+returns frame, symbol, and bit error rates with Wilson 95% confidence
+intervals for each. The decoder interface is
+
+  decoder(code, received, rng=None) -> estimated_codeword,
+
+deliberately minimal so BP (Day 9-10) and Metropolis (Day 5) can plug in
+unchanged. Sub-seeds are deterministically spawned via
+`np.random.SeedSequence` for the channel, decoder, and codeword streams,
+so a single user-facing `seed` reproduces an entire run exactly.
+
+All-zero transmission convention: every trial sends c = 0 by default, valid
+because the F_4-linear code under a symmetric channel has codeword-
+independent error probability. Verified empirically in
+`_test_random_codeword_matches_zero` (CIs from random-codeword and all-zero
+runs overlap at p = 0.1 with 5,000 trials each).
+
+Validation: `day4_validation.py` sweeps `null_decoder` (returns received
+unchanged) across all four codes at p ∈ {0.001, 0.005, 0.01, 0.05, 0.1, 0.2}
+with 5,000 trials each. The analytical FER for null_decoder under the
+all-zero convention is 1 − (1 − p)^n; every one of the 24 cells lands
+within 2.5 sigma of the analytical value, with most under 1 sigma. Symbol
+error rate equals p exactly; bit error rate equals (2/3)·p as predicted by
+the uniform-F_4* error model (one of {1, ω, ω²} flips on average 4/3 of
+the 2 bits per symbol).
+
+Rationale notes:
+- Wilson score interval over normal-approx: handles num_frame_errors = 0
+  and = num_trials cleanly (important at low p where FER samples flat-line
+  near zero, and at high p / large n where every frame fails).
+- Tracking both symbol and bit error rates: the paper's FER curves are
+  the headline figure, but symbol/bit rates are needed to verify decoder
+  symmetry and to compare to channel capacity in Section V.
+
+Outcome: channel.py + evaluation.py ready. 11 of 11 unit tests pass
+(channel = 4, evaluation = 7). Day 5 can wrap the existing Metropolis
+simulation behind the `Decoder` interface without further harness work.
