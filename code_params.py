@@ -379,10 +379,10 @@ def main() -> None:
     (out_dir / "parameter_table.md").write_text(md + "\n", encoding="utf-8")
     (out_dir / "parameter_table.txt").write_text(txt + "\n", encoding="utf-8")
     (out_dir / "decision_log_day3.md").write_text(log + "\n", encoding="utf-8")
-    (out_dir / "raw_results.json").write_text(
-        json.dumps([asdict(r) for r in reports], indent=2) + "\n",
-        encoding="utf-8"
-    )
+    #(out_dir / "raw_results.json").write_text(
+     #   json.dumps([asdict(r) for r in reports], indent=2) + "\n",
+     #   encoding="utf-8"
+    #)
 
     print()
     print(txt)

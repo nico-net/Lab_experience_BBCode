@@ -223,7 +223,7 @@ def make_large() -> BBCode:
     return BBCode(
         ell=12, m=6,
         A_terms=[(3, 0, ONE), (0, 1, OMEGA), (0, 2, OMEGA2)],
-        B_terms=[(0, 3, ONE), (4, 0, OMEGA), (8, 0, OMEGA2)],
+        B_terms=[(0, 3, ONE), (1, 0, OMEGA), (7, 0, OMEGA2)],
         name="large",
     )
 
