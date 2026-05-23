@@ -231,10 +231,10 @@ def analyze_code(code: BBCode, exact_threshold_k: int = 12,
         random_best = None
         trials = 0
     else:
-        weight_best = low_weight_info_set_search(basis, max_weight=3)
+        weight_best = low_weight_info_set_search(basis, max_weight=3)[0]
         rng = np.random.default_rng(seed)
-        random_best = random_message_search(basis, random_trials, rng)
-        d = min(basis_min, weight_best[0], random_best[0])
+        random_best = random_message_search(basis, random_trials, rng)[0]
+        d = min(basis_min, weight_best, random_best)
         method = "upper_bound"
         trials = random_trials
 

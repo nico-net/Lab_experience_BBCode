@@ -70,14 +70,14 @@
 
 ### Day 3 (3 hours): Code Parameters
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Compute n, k for each code instance (via rank over F_4)
-- [ ] For smallest code: compute d via brute-force codeword enumeration
-- [ ] For larger codes: upper bound on d via random search or leave unknown
-- [ ] Create parameter table [n, k, d]_4 for all instances
-- [ ] Verify no trivial codewords (all-zeros only)
+- [x] Compute n, k for each code instance (via rank over F_4)
+- [x] For smallest code: compute d via brute-force codeword enumeration
+- [x] For larger codes: upper bound on d via random search or leave unknown
+- [x] Create parameter table [n, k, d]_4 for all instances
+- [x] Verify no trivial codewords (all-zeros only)
 
 **Deliverable:** Parameter table ready for paper Section III
 
