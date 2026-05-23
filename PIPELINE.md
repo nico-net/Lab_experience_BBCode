@@ -103,14 +103,14 @@
 
 ### Day 5 (3 hours): Refactor Metropolis Decoder
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Wrap existing simulation code in new framework
-- [ ] Interface: decoder(code, received_word, T, num_sweeps) → estimated_codeword
-- [ ] Cost function: H(x) = J · |{violated checks}|
-- [ ] Temperature schedule tuning (if needed)
-- [ ] Upload decoder_metropolis.py to Project
+- [x] Wrap existing simulation code in new framework
+- [x] Interface: decoder(code, received_word, T, num_sweeps) → estimated_codeword
+- [x] Cost function: H(x) = J · |{violated checks}|
+- [x] Temperature schedule tuning (if needed)
+- [x] Upload decoder_metropolis.py to Project
 
 **Deliverable:** Metropolis decoder callable via evaluate()
 

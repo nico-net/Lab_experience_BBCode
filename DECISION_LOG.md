@@ -150,3 +150,76 @@ Rationale notes:
 Outcome: channel.py + evaluation.py ready. 11 of 11 unit tests pass
 (channel = 4, evaluation = 7). Day 5 can wrap the existing Metropolis
 simulation behind the `Decoder` interface without further harness work.
+
+
+### Day 5 (2026-05-25 → 2026-05-26): Metropolis decoder
+
+Refactored the lattice-based Metropolis from `old_simulation.py` into a
+parity-check-matrix-driven decoder for BB codes. Implemented two energy
+functions side by side for benchmarking:
+
+**Canonical (Sourlas-Nishimori, decoder_metropolis.py):**
+
+    E(x) = sum_i V_i(x_i) + gamma * | { c : (Hx)_c != 0 } |
+
+where V_i(x_i) = mu * (x_i != y_i) and mu = log((1-p)/(p/3)). Temperature
+T = 1 sits on the Nishimori line: at this T the Boltzmann distribution
+equals the Bayes posterior, so the equilibrium distribution of the chain
+matches the ML decoder's belief. gamma is set to max(1.0, mu); larger
+values would harden the syndrome constraint, smaller values would soften
+it. The chain does NOT early-stop on zero syndrome -- with the V term
+present, the lowest-energy state is the ML codeword, not just any
+codeword. We return the lowest-E state visited over `num_sweeps` sweeps.
+
+**Min-cost-repair (decoder_metropolis_v2.py, experimental):**
+
+    E(x) = sum_i V_i(x_i)
+         + beta * sum_{c failed} min_{j in N(c)} (V_j(a_j^{(c)}) - V_j(x_j))
+
+The second term per failed check is the cost of the cheapest single-symbol
+repair via any neighbor. Implemented faithfully to the formula above with
+no clamping of the inner min.
+
+**Benchmark (day5_benchmark.py, tiny n=18, 500 trials per cell, seed
+20260526):**
+
+```
+0.010 | null                   |   0.1920  [0.160, 0.229]  |   0.0117 |   0.0078 |   0.02
+ 0.010 | nishimori (canonical)  |   0.0100  [0.004, 0.023]  |   0.0018 |   0.0012 |   5.55
+ 0.010 | mincost-repair (v2)    |   0.1480  [0.120, 0.182]  |   0.0093 |   0.0059 |  54.46
+
+ 0.050 | null                   |   0.6100  [0.567, 0.652]  |   0.0490 |   0.0326 |   0.01
+ 0.050 | nishimori (canonical)  |   0.0760  [0.056, 0.103]  |   0.0150 |   0.0101 |  10.30
+ 0.050 | mincost-repair (v2)    |   0.4620  [0.419, 0.506]  |   0.0512 |   0.0349 |  49.94
+
+ 0.100 | null                   |   0.8500  [0.816, 0.879]  |   0.0988 |   0.0653 |   0.02
+ 0.100 | nishimori (canonical)  |   0.2380  [0.203, 0.277]  |   0.0606 |   0.0406 |   6.59
+ 0.100 | mincost-repair (v2)    |   0.7480  [0.708, 0.784]  |   0.1209 |   0.0817 |  32.10
+
+--------------------------------------------------------------------------------------------
+Monotonicity (PIPELINE Day 5 validation criterion):
+  null                FER = [0.192, 0.61, 0.85]  →  monotonic: PASS  (strict CI: yes)
+  nishimori           FER = [0.01, 0.076, 0.238]  →  monotonic: PASS  (strict CI: yes)
+  mincost-repair      FER = [0.148, 0.462, 0.748]  →  monotonic: PASS  (strict CI: yes)
+```
+
+PIPELINE Day 5 validation (FER monotonic in p on the tiny code) passes
+for nishimori with strict CI separation at every adjacent pair.
+
+**Nishimori headline results:** at p=0.01 the canonical decoder beats null
+by 19x in FER and the earlier syndrome-only baseline by 13x (from FER 0.132
+to 0.010). At p=0.10 it gets within striking distance of where BP is
+expected to operate. The decoder is a real decoder, not just a syndrome
+zeroer.
+
+**MinCostRepair pathology finding:** the change in the energy metric doesn't
+introduce any improvement with respect to the the nishimori metric. We 
+discard this path and focus on the canonical idea.
+
+**Decision:** ship the Nishimori decoder as the project's Metropolis
+decoder for Days 6-20. Keep decoder_metropolis_v2.py in the tree as a
+documented negative result.
+
+**Outcome:** Day 5 PIPELINE criterion (FER monotonic on tiny) PASSES for
+the Nishimori decoder. Day 6-7 can proceed to full FER curves on all
+four code instances using the Nishimori decoder unchanged.
