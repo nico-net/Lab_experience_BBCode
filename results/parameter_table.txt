@@ -1,0 +1,6 @@
+name    (ell,m)       n  rank    k    rate     d_4  method
+----------------------------------------------------------
+tiny    ( 3, 3)     18     8   10  0.5556       6  exact
+small   ( 6, 6)     72    30   42  0.5833     ≤ 6  upper_bound
+medium  ( 9, 6)    108    50   58  0.5370     ≤ 6  upper_bound
+large   (12, 6)    144    68   76  0.5278     ≤ 4  upper_bound
