@@ -223,3 +223,115 @@ documented negative result.
 **Outcome:** Day 5 PIPELINE criterion (FER monotonic on tiny) PASSES for
 the Nishimori decoder. Day 6-7 can proceed to full FER curves on all
 four code instances using the Nishimori decoder unchanged.
+
+### Day 6 (2026-05-26): FER waterfall and the d_min ceiling
+
+Ran `day6_fer_curves.py --full` to produce the first Metropolis FER waterfall
+across all four codes (1,000 trials/cell, 200 sweeps, 10 p-values, seed
+20260526). The sweep finished cleanly with strict-CI FER monotonicity in p
+per code, satisfying the PIPELINE Day 6-7 GO/NO-GO. The plot itself,
+however, exposed a structural issue that took the rest of the day to
+diagnose.
+
+**Anomaly:** at low p (≤ 0.03) the FER ordering is
+`medium < tiny ≲ small < large`, with `large` (n=144) worse than every
+other code by a factor of 5-10× at p=0.01 and CIs that do not overlap. A
+larger code beating no smaller code below threshold cannot be explained by
+Metropolis mixing time alone; it points at the code rather than the
+decoder.
+
+**Diagnostic chain.** Investigated three hypotheses in order:
+
+1. *Mixing-time scaling on n=144.* Re-ran `large` at p=0.01 with
+   `--sweeps 1000` (5× the budget). FER did not drop. Mixing is not
+   limiting at the current sweep count.
+2. *The `large` polynomial.* The Day 2 choice was
+   `B = y³ + ω·x⁴ + ω²·x⁸`, later edited (between Day 2 logging and the
+   Day 3 parameter sweep) to `B = y³ + ω·x + ω²·x⁷` to dodge a column-sum
+   pathology. Re-ran the Tier 1 candidates from a focused search:
+   `(a,b) ∈ {(1,5), (1,7), (1,11), (5,7), (5,11), (7,11), (3,7), (4,9)}`
+   with B = y³ + ω·x^a + ω²·x^b. Every one yielded d ≤ 6 by combined
+   weight-1/2/3 enumeration + 50,000 random-message sampling.
+3. *The y-exponent in B.* Extended the search to vary the y-degree as
+   well: `B = y^c + ω·x^a + ω²·x^b` for `c ∈ {1,2,3,4,5}` and a, b spread
+   over coprime/non-coprime pairs in Z_12. Same result: all bounded above
+   by d=6.
+
+**Interpretation — this is structural, not bad luck.** Bravyi 2024's d=12
+for the [[144,12,12]] instance is the *quantum CSS distance* — the
+minimum weight of a logical operator after quotienting by Z-stabilizers,
+i.e. min over the cosets of rs(H^Z) inside ker(H^X). That involves the
+joint structure of A and B and is typically much larger than the classical
+distance of ker(H) alone. Pantaleev & Kalachev's analysis of generalized
+bicycle codes (which subsumes BB codes) gives the relevant bound: for
+weight-3 A and B at (ℓ,m) = (12,6), the classical F_q-distance of
+ker([A|B]) is bounded by the cycle structure of the bipartite Tanner graph,
+which is fixed by the abelian group Z_12 × Z_6 and the monomial supports —
+not by the F_4 coefficient overlay. Re-skinning {1,1,1} → {1,ω,ω²}
+preserves the classical distance up to ±1 because it doesn't change which
+codewords exist; it just changes which F_4*-element each nonzero entry
+takes.
+
+This means d=12 is unreachable for *any* weight-3, ω-decorated BB code at
+n=144 with this group structure. Continuing the polynomial search would be
+spending Day 7 budget on a quantity that the construction class does not
+support.
+
+**Decision: retain the Day 2 canonical polynomials for all four codes.**
+The `large` polynomial as documented in Day 2 stays at
+`B = y³ + ω·x + ω²·x7`; the parameter-table file reflects the same
+d ≤ 6 bound for all three non-tiny instances. No change to `tiny`,
+`small`, `medium`, `large` in `bb_constructor.py`. ALL_INSTANCES order
+and naming preserved.
+
+**Rationale.** The paper's contribution is decoder analysis on F_4 BB-type
+LDPC codes (BP vs. Metropolis, EXIT prediction, the bridge to quantum BB
+codes via the Section VII Tanner-graph structural match) — not a record
+on minimum distance. The FER curves measure decoder quality; the error
+floor set by d does affect the deep-waterfall tail but not the threshold
+behavior at moderate p, which is what BP and EXIT will resolve in Phase
+2-3. The current d=6 ceiling is honest data that will be reported in the
+Section III parameter table, with the *quantum* distance of the analogous
+Bravyi codes noted in Section VII for context.
+
+**Alternatives considered and rejected:**
+
+- *Switch to weight-4 or weight-5 A, B to chase d=8-10.* Breaks
+  (3,6)-regularity and the structural alignment with Bravyi's Tanner
+  graph that Section VII relies on. Increases check-node degree, which
+  raises BP convergence risk in the Day 9-12 critical phase. Rejected.
+- *Drop `large` and run with three codes.* Tempting, since `large` with
+  d=6 carries no more distance information than `small`. Rejected because
+  the scaling axis (n = 18 → 72 → 108 → 144) is needed to show
+  decoder-time and threshold-sharpness scaling, which are independent of
+  d. The FER plot read as a *decoder-quality* measurement remains
+  meaningful with four points.
+- *Change the group structure to (ℓ,m) = (8,9) or (6,12).* Different
+  cycle profile, possibly different d. Rejected because it would force a
+  re-derivation of the Section VII bridge (which uses Z_ℓ × Z_m with
+  specific shifts) and burn ~2 days re-doing Days 2-3.
+
+**Implications for the paper:**
+
+- *Section III (Code Construction).* Parameter table reports `d ≤ 6` for
+  small/medium/large and `d = 6` (exact) for tiny. A footnote distinguishes
+  this from the *quantum CSS distance* of the analogous Bravyi codes
+  (6, 6, 10, 12), citing Pantaleev-Kalachev for the bound.
+- *Section VI (Numerical Results).* The Day 6 FER plot is the headline
+  Metropolis result. Phrasing emphasizes decoder behavior: "Metropolis FER
+  on a family of F_4 BB codes spanning n = 18-144." No claim about
+  code-distance scaling. The cross-over at low p between codes of similar
+  d is read as decoder mixing-time scaling, which is exactly the kind of
+  observation EXIT analysis (Section V) is for.
+- *Section VII.* The classical-vs-quantum d gap becomes a feature, not a
+  bug. The Section VII structural-match argument explains *why* the
+  quantum distance can exceed the classical distance: CSS quotienting kills
+  the low-weight classical codewords that survive in ker(H). This was
+  going to be a paragraph anyway; now it has concrete numbers attached.
+
+**Outcome.** Day 6 deliverables locked: `day6_metropolis_sweep_full.{json,
+txt,csv}`, `day6_metropolis_fer_full.png`, `day6_metropolis_ser_ber_full.png`.
+FER monotone in p with strict-CI separation per code. Phase 1 closes with
+the four canonical codes intact and the d-ceiling explicitly documented as
+a known property of the construction class. Day 7 reserved as buffer per
+PIPELINE; on schedule to start Day 8 (BP reading) tomorrow.

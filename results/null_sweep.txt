@@ -1,0 +1,3 @@
+Day 4 null-decoder sweep — empirical FER vs analytical 1-(1-p)^n
+  trials per cell: 5000,  seed: 20260524
+  |Δ|/σ < 4 expected for all cells (false-positive rate < 1/15000).
