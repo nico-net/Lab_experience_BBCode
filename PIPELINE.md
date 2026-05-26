@@ -120,14 +120,14 @@
 
 ### Days 6-7: First Results + Buffer
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Generate FER vs. p curves for Metropolis on all code sizes
-- [ ] 1000+ trials per data point
-- [ ] Save raw data (not just plots)
-- [ ] Create first draft of Figure 2 (FER curves)
-- [ ] Debug any unexpected behaviors
+- [x] Generate FER vs. p curves for Metropolis on all code sizes
+- [x] 1000+ trials per data point
+- [x] Save raw data (not just plots)
+- [x] Create first draft of Figure 2 (FER curves)
+- [x] Debug any unexpected behaviors
 
 **Deliverable:** End-of-week checkpoint plot: Metropolis FER curves
 
@@ -143,14 +143,14 @@
 
 ### Day 8 (3 hours): Reading and Planning
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Re-read course notes on binary BP (refresh fundamentals)
-- [ ] Read Davey & MacKay 1998 Section III (non-binary BP algorithm)
-- [ ] Skim one quantum LDPC BP paper (Pryadko/Roffe) for Section VII context
-- [ ] Write BP pseudocode before any implementation
-- [ ] Upload pseudocode to Project for review
+- [x] Re-read course notes on binary BP (refresh fundamentals)
+- [x] Read Davey & MacKay 1998 Section III (non-binary BP algorithm)
+- [x] Skim one quantum LDPC BP paper (Pryadko/Roffe) for Section VII context
+- [x] Write BP pseudocode before any implementation
+- [x] Upload pseudocode to Project for review
 
 **Deliverable:** BP pseudocode reviewed and approved
 

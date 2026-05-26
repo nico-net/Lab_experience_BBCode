@@ -335,3 +335,106 @@ FER monotone in p with strict-CI separation per code. Phase 1 closes with
 the four canonical codes intact and the d-ceiling explicitly documented as
 a known property of the construction class. Day 7 reserved as buffer per
 PIPELINE; on schedule to start Day 8 (BP reading) tomorrow.
+
+
+### Day 8 (2026-05-25) BP reading + algorithm choice
+
+Read Declercq-Fossorier 2007 Sections II.A-C in preference to Davey-MacKay
+1998 (the project brief's primary BP reference). The DF tensor-representation
+exposition is cleaner and more directly implementable: variable→check
+permutation, FHT, leave-one-out pointwise product, IFHT, inverse
+permutation. DM is still the citation in the paper for prior art and FHT
+provenance; DF will be cited where we describe the implementation.
+
+Decision: probability-domain BP with FFT check update, NOT log-domain EMS.
+Rationale:
+- For q = 4 the q² complexity of probability-domain BP is already trivial.
+  At our check degree d_c = 6, BP-FFT does roughly 6 × 4 × log_2 4 = 48
+  multiplications per output edge, vs ~80 for naive direct convolution; a
+  ~2× speedup that does not justify the EMS log-domain machinery.
+- EMS introduces approximation error (configuration-set truncation, factor
+  /offset corrections from density evolution) that we would then need to
+  account for against the ML reference on Day 12. Pure probability-domain
+  BP IS the textbook reference for ML comparison.
+- The DF EMS log-domain decoder is designed for q ≥ 64 where the LUT
+  approach of [9] becomes prohibitive; this is not our regime.
+
+Decision: damping defaults to 0 (standard flooding BP). The pipeline note
+flagged damping as "optional but recommended for stability"; we expose it
+as a parameter but leave it off by default until we see oscillation on
+real data. BB codes have short cycles (the column-sum-zero redundancy
+forces them; see Day 2 DECISION_LOG), so damping may matter for the
+medium and large instances and we can revisit on Day 12.
+
+Section VII reading: deferred from Day 8 to Day 21 buffer. Roffe et al.
+(BP-OSD, 2020) is the natural target since Bravyi 2024 explicitly used
+it on [[144, 12, 12]]; Pryadko-group BP papers are alternative. Decision
+will be made when Section VII drafting starts.
+
+### Day 9 (26-05-26) BP-FFT implementation
+
+decoder_bp.py uploaded. ~520 lines including docstring + 12 inline unit
+tests. Class is `BPFFTDecoder(p, max_iters=50, damping=0.0, ...)`,
+conforms to evaluation.Decoder via __call__.
+
+Implementation choices worth recording:
+- Walsh-Hadamard H4 (4 × 4 ±1 matrix on (F_2)² ≅ F_4 additive group) and
+  edge-permutation tables PERM_FORWARD[h] / PERM_BACKWARD[h] precomputed
+  at module import. Each is a small ndarray; no per-call rebuild.
+- Tanner-graph metadata (edge-to-check / edge-to-variable mappings,
+  per-edge weights, per-edge forward+backward permutation index arrays)
+  cached by id(code.H) on first __call__, matching decoder_metropolis's
+  pattern. Repeat decodes on the same code share the cache.
+- Vectorisation: var→check messages stored as a flat (num_edges, 4) array.
+  Forward/backward edge permutations applied via np.take_along_axis with a
+  per-edge permutation array (one row of perm_fwd/perm_bwd per edge).
+  Walsh-Hadamard is a (E, 4) @ (4, 4) matmul — single numpy call.
+- Leave-one-out frequency product per check uses prefix/suffix sweeps:
+  O(d_c) per check vs O(d_c²) naively. Same trick on variable side.
+- Numerical safety after IFHT: clip negative residue to 0, fall back to
+  uniform message on identically-zero rows. The clip is essential — small
+  negatives appear routinely from finite-precision IFHT even though the
+  true convolution is non-negative.
+- Convergence: hard decision from belief argmax after each check-node
+  update, syndrome check via gf4_matvec(H, x_hat); early-return on H·x_hat = 0.
+
+Unit tests passing (all 12 of 12):
+- H4 self-inverse (H4·H4 = 4·I) and symmetry.
+- FHT convolution theorem: IFHT(FHT(u)·FHT(v)) == direct sum_{a+b=c} u[a]v[b]
+  for 10 random pdf pairs.
+- Permutation tables: forward/backward inverse, 0 fixed, ω-cycle correct.
+- Single-check-of-degree-2 sanity: FFT output matches direct convolution
+  rule for the textbook  h_1 x_1 + h_2 x_2 = 0  constraint.
+- Zero input ⇒ zero output.
+- Codeword input ⇒ codeword output (no perturbation).
+- Every single-symbol error pattern on the tiny code recovered at p = 0.02.
+- ≥ 95% recovery at p = 0.01 on the tiny code over 300 random noise samples.
+- Reproducibility (same input ⇒ same output).
+- Invalid parameters (p ∉ (0,1), damping ∉ [0,1), max_iters ≤ 0) rejected.
+
+Initial FER sanity sweep (500 trials/cell for tiny, 200 for small, 100 for
+medium/large; max_iters = 50):
+
+  code    p=0.001  p=0.005  p=0.010  p=0.050  p=0.100   ms/decode
+  tiny    0.000    0.000    0.000    0.036    0.228     0.3 → 6.2
+  small   0.000    0.000    0.000    0.060    0.305     0.8 → 16
+  medium                    0.000    0.010              1.2 → 4.0
+  large                     0.000    0.030              1.7 → 9.9
+
+Curves are monotonic, FER below noise floor for p ≤ 0.01, smooth waterfall
+at p = 0.05 → 0.10. Random-codeword symmetry check (medium, p = 0.03,
+200 trials each):  zero-codeword FER = 0/200, random-codeword FER = 1/200
+— overlapping inside Monte-Carlo error, as required.
+
+Per-decode timing scales reasonably with n; the small constant factor on
+"easy" decodes (where p is well below threshold) reflects early termination
+after 1 iteration. Hot loop is Python-per-check / per-variable, room to
+vectorise across checks if we hit a wall on the large code.
+
+DEFERRED to Day 11-12: ML cross-validation. The decoder is structurally
+correct (all 12 unit tests pass, FER curves are well-behaved) but
+threshold-quality validation against ML is still on the schedule.
+
+DEFERRED: error-floor / damping study. Initial sweep shows no obvious
+instability at max_iters = 50 without damping, but the cycle structure of
+BB codes warrants re-examination once we have BP-vs-ML curves.
