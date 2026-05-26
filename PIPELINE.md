@@ -160,18 +160,18 @@
 
 ### Days 9-10 (6 hours): Implement BP
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Message structure: length-4 probability vectors over F_4
-- [ ] Variable node update: pointwise product + normalization
-- [ ] Check node update (THE HARD PART):
-  - [ ] Edge weight permutation: m(x) → m(h^{-1}·x)
-  - [ ] Convolution over F_4 via FHT or direct method
-  - [ ] Inverse permutation on outgoing message
-- [ ] Damping (optional but recommended for stability)
-- [ ] Convergence check: message change threshold or max iterations
-- [ ] Upload decoder_bp.py to Project
+- [x] Message structure: length-4 probability vectors over F_4
+- [x] Variable node update: pointwise product + normalization
+- [x] Check node update (THE HARD PART):
+  - [x] Edge weight permutation: m(x) → m(h^{-1}·x)
+  - [x] Convolution over F_4 via FHT or direct method
+  - [x] Inverse permutation on outgoing message
+- [x] Damping (optional but recommended for stability)
+- [x] Convergence check: message change threshold or max iterations
+- [x] Upload decoder_bp.py to Project
 
 **Deliverable:** BP implementation complete (not yet validated)
 
@@ -184,13 +184,13 @@
 
 ### Day 11 (3 hours): ML Decoder for Validation
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Brute-force ML decoder for codes with 4^k ≤ 2^14 (k ≤ 7)
-- [ ] Enumerate all codewords, find max likelihood given received word
-- [ ] Test on smallest code at p = 0.001, 0.01
-- [ ] Upload decoder_ml.py to Project
+- [x] Brute-force ML decoder for codes with 4^k ≤ 2^14 (k ≤ 7)
+- [x]Enumerate all codewords, find max likelihood given received word
+- [x] Test on smallest code at p = 0.001, 0.01
+- [x] Upload decoder_ml.py to Project
 
 **Deliverable:** Ground-truth ML decoder for BP validation
 
@@ -200,14 +200,14 @@
 
 ### Day 12 (3 hours): BP Validation — CRITICAL CHECKPOINT
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Run BP and ML on same trials (smallest code, p = 0.001, 0.005, 0.01, 0.05)
-- [ ] Measure agreement: % of trials where BP decision = ML decision
-- [ ] REQUIRED: At p=0.001, agreement >95%
-- [ ] REQUIRED: At p=0.01, agreement >80%
-- [ ] If validation fails: upload BP code to Project and request debug help
+- [x] Run BP and ML on same trials (smallest code, p = 0.001, 0.005, 0.01, 0.05)
+- [x] Measure agreement: % of trials where BP decision = ML decision
+- [x] REQUIRED: At p=0.001, agreement >95%
+- [x] REQUIRED: At p=0.01, agreement >80%
+- [x] If validation fails: upload BP code to Project and request debug help
 
 **GO/NO-GO DECISION:**
 - **If validation passes:** Proceed to Days 13-14
