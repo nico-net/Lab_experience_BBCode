@@ -671,3 +671,292 @@ PIPELINE Phase 2 (Days 8-14) STATUS: COMPLETE.
     - Day 13-14 figure:    figure2_bp_fer.png, all four codes, 40 cells.
 
 
+# Day 15 report — EXIT chart analysis, binary recap and GF(4) extension
+
+**Status:** Day 15 complete. exit_analysis.py uploaded, 10/10 unit tests
+pass, preview EXIT chart at four representative noise rates shows the
+expected tunnel-open / tunnel-closed transition between p = 0.16 and
+p = 0.20.
+
+---
+
+## 1. What EXIT charts are
+
+EXIT (Extrinsic Information Transfer) charts are a one-parameter projection
+of density evolution introduced by ten Brink (2001) and put on rigorous
+footing by Ashikhmin-Kramer-ten Brink (2004). The idea is to summarise the
+distribution of a BP message by a single scalar — its mutual information
+with the underlying transmitted symbol — and to track this scalar through
+one iteration of the variable-node update and the check-node update. If
+the two transfer functions admit a "tunnel" between them throughout
+[0, log_2 q], BP converges from any starting point to the noise-free fixed
+point. The smallest channel noise at which the tunnel pinches off is the
+density-evolution BP threshold p*.
+
+This is *not* a finite-length analysis. It assumes:
+1. The Tanner graph is locally tree-like (no short cycles), so messages on
+   distinct edges into the same node are independent.
+2. Edge weights are iid uniform over F_q* (only relevant for non-binary).
+3. The codeword transmitted is the all-zero one (channel symmetry).
+4. A "calibration" surrogate for the message distribution exists that is
+   parameterised by a single scalar (the MI itself).
+
+The threshold p* is an asymptotic (n → ∞) prediction. Real codes deviate
+from p* by finite-length effects, and PIPELINE Day 17 sets a 20-30%
+tolerance for the comparison against simulation.
+
+## 2. Recap of the binary case
+
+Setup. On each Tanner-graph edge, BP exchanges log-likelihood ratios (LLRs):
+the bit-perspective sign-and-magnitude representation of a length-2
+probability vector. Let X ∈ {0, 1} be the true bit (or ±1 after BPSK), A
+the incoming LLR, E the outgoing LLR. Mutual information I_A = I(X; A),
+I_E = I(X; E), both in [0, 1] bits.
+
+Consistent Gaussian assumption. Under all-zero transmission with output
+symmetry, if A is Gaussian with mean σ²/2 and variance σ², the conditional
+LLR distribution has the "consistent" form and I(X; A) is a deterministic
+function J(σ):
+
+    J(σ) = 1 − E[ log_2(1 + e^{−L}) ],     L ~ N(σ²/2, σ²).
+
+J is monotone from J(0) = 0 to J(∞) = 1, invertible, and ten Brink fits a
+closed-form polynomial approximation for fast evaluation.
+
+Variable-node EXIT. At a degree-d_v variable node, the extrinsic LLR is
+the sum of d_v − 1 incoming LLRs from other checks plus the channel LLR.
+LLRs from independent Gaussian distributions add their σ², so
+
+    I_E^V(I_A, p) = J( √( (d_v − 1) · J^{−1}(I_A)² + J^{−1}(I_ch(p))² ) ).
+
+Check-node EXIT. The check operation is a sum-product over a parity
+constraint; the tanh-rule gives a duality between input and output entropy
+that, under the consistent-Gaussian approximation, reduces to
+
+    1 − I_E^C(I_A) ≈ J( √(d_c − 1) · J^{−1}(1 − I_A) ).
+
+For the binary erasure channel both formulas are exact; for binary AWGN
+they are tight within ~0.1 dB; for binary symmetric channel a small
+correction is required at low MI but the approximation remains useful for
+designing codes.
+
+Threshold. The EXIT chart plots V forward (x = I_A, y = I_E^V) and C
+inverted (x = I_E^C, y = I_A_c) on the same axes. The two curves always
+meet at (1, 1); for BP to converge they must not cross anywhere on the
+open interval (0, 1). The threshold p* is the smallest p at which the
+curves just touch — the tunnel pinches off — and beyond which BP cannot
+make progress past some MI plateau.
+
+## 3. Extension to GF(q): what changes and what survives
+
+For q = 2^p, messages along Tanner-graph edges are length-q probability
+vectors over F_q. The clean binary scalar summary (one LLR) doesn't carry
+over; instead we summarise each message by its **mutual information with
+the true symbol**, in bits per F_q symbol:
+
+    I(X; M) = E_{X, M} [ log_2( P(X | M) / P(X) ) ] ∈ [0, log_2 q].
+
+Under the all-zero-codeword convention and F_q*-symmetric channel, the
+posterior P(X | M) is just M itself up to relabelling, so
+
+    I(X; M) = log_2(q) − E[ H(M) ],
+
+where H(M) = −Σ_x M(x) log_2 M(x) is the Shannon entropy of M as a
+probability vector. This is the natural scalar summary: a delta message
+has MI = log_2 q (perfect knowledge); a uniform message has MI = 0 (no
+knowledge); intermediate states interpolate.
+
+What changes from binary to q = 4:
+
+- The MI range is [0, 2] bits/symbol instead of [0, 1].
+- There is no clean closed-form J function for QSC-derived messages. The
+  message distribution has 4 atoms (one per channel output Y), each on a
+  4-vector; there's no consistent-Gaussian shortcut.
+- The check-node update is an *additive* convolution over F_4 (i.e. on the
+  group (Z/2)² ≅ F_4 under addition), exactly the operation the FFT-BP
+  decoder already implements via the Walsh-Hadamard transform.
+
+What survives unchanged:
+
+- The all-zero-codeword convention, with channel symmetry guaranteeing
+  the analysis is independent of which codeword is transmitted.
+- The decomposition into variable-node and check-node transfer functions,
+  one per node type.
+- The tunnel-open / tunnel-closed criterion for BP convergence; the
+  chart still meets at (log_2 q, log_2 q) and the threshold is the smallest
+  noise rate where the curves touch in the open interior.
+- The iid-edge-weight averaging idea — which for BB codes is justified
+  because each row of H contains exactly one each of {1, ω, ω²}.
+
+## 4. The GF(4) algorithm, precisely
+
+### 4.1 Channel mutual information for the QSC
+
+For the q-ary symmetric channel with error rate p:
+
+    P(Y = y | X = x) = 1 − p     if y = x
+                     = p / (q − 1)   if y ≠ x.
+
+The channel MI is
+
+    I_ch(p) = log_2(q) − H(Y | X) = log_2(q) + (1 − p) log_2(1 − p) + p log_2(p / (q − 1)),
+
+monotonically decreasing from log_2(q) at p = 0 to 0 at p = (q − 1) / q.
+For q = 4 the channel becomes useless at p = 3/4 (uniform output regardless
+of input). We invert I_ch(p) numerically (Brent's method on the monotone
+interval) to find the calibration channel rate p_calib that realises any
+target MI in [0, log_2 q].
+
+### 4.2 Calibration ensemble
+
+To produce N iid sample messages with mutual information equal to a
+target I_A, we draw them from the QSC at rate p_calib = I_ch^{−1}(I_A):
+
+  for each sample i = 1, …, N:
+      Y_i ~ Categorical( 1 − p_calib,  p_calib / (q − 1),  …,  p_calib / (q − 1) )
+      m_i[x] = (1 − p_calib)   if x = Y_i
+             = p_calib / (q − 1)   otherwise.
+
+By construction E[I(X; M)] = I_ch(p_calib) = I_A. Because the QSC is
+F_q*-symmetric, the ensemble of (4-vector) messages produced by this
+calibration is *exchangeable under any permutation of the nonzero F_q
+indices*. This is exactly the iid-uniform-edge-weight averaging that
+density evolution requires; we get it for free from the channel symmetry.
+
+### 4.3 Variable-node EXIT function
+
+For a degree-d_v variable node, the extrinsic var→check message on one
+edge is the normalised pointwise product of the d_v − 1 incoming check→var
+messages (each with MI = I_A) and the channel observation (MI = I_ch(p)).
+Sample N output messages via Monte Carlo:
+
+  for each sample i:
+      draw d_v − 1 incoming m_1, …, m_{d_v − 1} ~ calibration(I_A)
+      draw the channel obs m_ch ~ calibration(I_ch(p))
+      m_out[i] = NORMALISE( m_ch · m_1 · m_2 · ⋯ · m_{d_v − 1} )
+
+Estimate I_E^V(I_A, p) = log_2(q) − (1/N) Σ_i H(m_out[i]).
+
+Endpoint sanity:
+- I_E^V(I_A = 0, p) = I_ch(p)            (no info from checks, channel only)
+- I_E^V(I_A = log_2 q, p) = log_2 q     (perfect info from checks ⇒ output perfect)
+- I_E^V is monotone non-decreasing in I_A and non-increasing in p.
+
+All three are verified by unit tests; the first holds to ~10⁻² with
+N = 80 000 (Monte-Carlo error).
+
+### 4.4 Check-node EXIT function
+
+For a degree-d_c check node, the extrinsic check→var message is the
+F_q-additive convolution of the d_c − 1 incoming var→check messages.
+Computed via the Walsh-Hadamard transform exactly as the FFT-BP decoder:
+
+  for each sample i:
+      draw d_c − 1 incoming m_1, …, m_{d_c − 1} ~ calibration(I_A)
+      F_j = H_4 · m_j         (forward Walsh-Hadamard, j = 1, …, d_c − 1)
+      P = F_1 ⊙ F_2 ⊙ ⋯ ⊙ F_{d_c − 1}   (componentwise product)
+      m_out[i] = (H_4 · P) / q,  clipped to ≥ 0 and renormalised.
+
+Edge weights are taken = 1 in this routine; the iid-uniform-edge-weight
+averaging is satisfied automatically through the F_q*-symmetry of the QSC
+calibration ensemble (Section 4.2).
+
+Endpoint sanity:
+- I_E^C(I_A = 0) = 0                   (uniform inputs ⇒ uniform output)
+- I_E^C(I_A = log_2 q) = log_2 q       (delta inputs at 0 ⇒ delta output at 0)
+- I_E^C is monotone non-decreasing in I_A.
+
+All verified by unit tests.
+
+### 4.5 Threshold (Day 16, previewed)
+
+The BP threshold p* for the (d_v, d_c) ensemble over F_q is the smallest
+p for which the V curve x ↦ I_E^V(x, p) and the inverted-C curve
+x ↦ (I_E^C)^{−1}(x) just touch on the open interval (0, log_2 q). Day 16
+will bisect on p; today we run a preview at four p values to verify the
+qualitative behaviour.
+
+## 5. Implementation: exit_analysis.py
+
+Single self-contained module, 350 lines including docstring and tests.
+Depends on numpy, scipy (Brent root-finding), and decoder_bp.H4 (so the
+EXIT analysis uses literally the same Walsh-Hadamard matrix as the
+decoder's check-node update — sanity by construction).
+
+Public API:
+- `mi_of_messages(msgs, q=4)` — Monte-Carlo MI estimator.
+- `channel_mi(p, q=4)` — closed-form QSC MI.
+- `invert_channel_mi(target_mi, q=4)` — numerical inverse via Brent.
+- `calibration_messages(target_mi, N, q=4, rng=None)` — sample N msgs.
+- `variable_node_mi(I_A, p, d_v, N=10000, q=4, rng=None)` → float.
+- `check_node_mi(I_A, d_c, N=10000, q=4, rng=None)` → float.
+- `exit_curves(p, d_v, d_c, n_points=21, N=10000, q=4, rng=None)` → ExitCurves.
+
+Unit tests (10/10 pass):
+- MI of delta = log_2 q, of uniform = 0.
+- Channel MI boundaries: I_ch(0) = 2, I_ch(3/4) = 0; monotone decreasing.
+- Round-trip: channel_mi(invert_channel_mi(I)) = I to 1e-10.
+- Calibration ensemble: mi_of_messages(calibration(I)) = I to 1e-2 at N = 2 × 10⁵.
+- V-EXIT endpoints: I_E^V(0, p) = I_ch(p), I_E^V(log_2 q, p) = log_2 q.
+- C-EXIT endpoints: I_E^C(0) = 0, I_E^C(log_2 q) = log_2 q.
+- V-EXIT monotone in I_A, V-EXIT monotone-decreasing in p.
+- C-EXIT monotone in I_A.
+
+## 6. Preview results
+
+day15_preview.py generates exit curves at four p values bracketing the
+expected threshold, using d_v = 3, d_c = 6 (matching all four BB code
+instances), 21 grid points on I_A ∈ [0, 2], N = 20 000 Monte-Carlo samples
+per point:
+
+```
+ p     I_ch    V(0)    V(2)    C(0)    C(2)   min_gap   tunnel
+0.05   1.634   1.634   2.000   0.000   2.000   +0.023     open
+0.13   1.237   1.237   2.000   0.000   2.000   +0.019     open
+0.16   1.112   1.112   2.000   0.000   2.000   +0.017     open
+0.20   0.961   0.961   2.000   0.000   2.000   −0.050   CLOSED
+```
+
+(`min_gap` is the minimum value of I_E^V(x) − (I_E^C)^{−1}(x) on the
+interior I_A grid points.)
+
+Endpoint sanity is satisfied at all four p: V(0) = I_ch(p) (channel-only,
+no extrinsic info), V(2) = 2 (perfect input ⇒ perfect output), C(0) = 0,
+C(2) = 2.
+
+The tunnel pinches from positive (open) to negative (closed) between
+p = 0.16 and p = 0.20, so the asymptotic EXIT threshold for the (3, 6)
+ensemble over F_4 is somewhere in p* ∈ [0.16, 0.20]. Day 16 will bisect.
+
+Figure `results/day15_exit_preview.png` shows the four panels: V (blue
+circles) above inverted-C (red squares) at p ≤ 0.16, V crossing through
+inverted-C at p = 0.20.
+
+## 7. Consistency with Day 13-14 simulated thresholds
+
+The simulated finite-length thresholds (FER = 0.5 crossings on the actual
+codes) cluster as follows from `day13_14_bp_sweep.csv`:
+
+    tiny:    p_c^{sim} ≈ 0.16
+    small:   p_c^{sim} ≈ 0.12
+    medium:  p_c^{sim} ≈ 0.13
+    large:   p_c^{sim} ≈ 0.13
+
+The asymptotic EXIT prediction p* ∈ [0.16, 0.20] is *above* the simulated
+thresholds — the expected ordering, because finite-length codes have worse
+thresholds than their asymptotic ensemble. The simulated-vs-EXIT gap of
+roughly 20–35% is in the same ballpark as the PIPELINE Day 17 tolerance.
+Day 16 will refine p* and Day 17 will perform the formal comparison;
+present indication is PASS, with tiny being the closest match to the
+asymptotic prediction (consistent with it having the most regular Tanner
+graph among the four).
+
+## 8. Outputs
+
+Files added on Day 15:
+- `exit_analysis.py`        — main module, 10/10 tests pass
+- `day15_preview.py`        — preview-chart generator
+- `results/day15_exit_preview.png` — 4-panel preview figure
+- `decision_log_entry_day15.md`    — this report (paste into DECISION_LOG)
+
+

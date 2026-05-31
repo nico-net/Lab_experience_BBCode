@@ -241,11 +241,12 @@
 **Status:** [x] Complete
 
 **Tasks:**
-- [ ] Review course notes on binary EXIT charts
-- [ ] Implement mutual information for GF(4) symbols and length-4 message vectors
-- [ ] Variable node EXIT function: I_E^V(I_A, p)
-- [ ] Check node EXIT function: I_E^C(I_A)
-- [ ] Upload exit_analysis.py to Project
+- [x] Review course notes on binary EXIT charts (Sections 1–2 of this report)
+- [x] Implement mutual information for GF(4) symbols and length-4 message vectors
+- [x] Variable node EXIT function: I_E^V(I_A, p)
+- [x] Check node EXIT function: I_E^C(I_A)
+- [x] Upload exit_analysis.py to Project
+- [bonus] Preview EXIT chart at 4 p values bracketing the threshold
 
 **Deliverable:** EXIT function computation working
 
