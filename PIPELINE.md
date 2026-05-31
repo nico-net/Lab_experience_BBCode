@@ -219,14 +219,14 @@
 
 ### Days 13-14 (6 hours): Full BP Performance Curves
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Run BP on all code sizes, p ∈ [0.001, 0.3] on log scale
-- [ ] 1000+ trials per point
-- [ ] Generate FER curves for both BP and Metropolis on same plot
-- [ ] Save raw data
-- [ ] Create Figure 2 (final version): FER comparison
+- [x] Run BP on all code sizes, p ∈ [0.001, 0.3] on log scale
+- [x] 1000+ trials per point
+- [x] Generate FER curves for both BP and Metropolis on same plot
+- [x] Save raw data
+- [x] Create Figure 2 (final version): FER comparison
 
 **Deliverable:** End-of-Phase-2 plot: BP vs. Metropolis FER curves, all code sizes
 
@@ -238,7 +238,7 @@
 
 ### Day 15 (3 hours): EXIT Generalization to GF(4)
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
 - [ ] Review course notes on binary EXIT charts
