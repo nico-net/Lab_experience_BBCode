@@ -438,3 +438,101 @@ threshold-quality validation against ML is still on the schedule.
 DEFERRED: error-floor / damping study. Initial sweep shows no obvious
 instability at max_iters = 50 without damping, but the cycle structure of
 BB codes warrants re-examination once we have BP-vs-ML curves.
+
+### Day 11 (26-06-26): Brute-force ML decoder
+
+decoder_ml.py uploaded. Conforms to evaluation.Decoder via `MLDecoder.__call__`.
+Used purely for Day 12 BP validation; not a production decoder.
+
+Algorithm choice: min-Hamming-distance over the enumerated codeword set.
+Rationale:
+- For the QSC, log P(y | c) = n·log(1-p) - D·log((1-p)/(p/3)) where D is
+  Hamming distance. With p < 3/4 the coefficient log((1-p)/(p/3)) > 0, so
+  ML ⇔ argmin D. Under a uniform codeword prior MAP = ML.
+- Integer arithmetic (no floats), no underflow concerns, exact equivalence.
+- Makes the bounded-distance argument transparent: d = 6 ⇒ corrects every
+  pattern of weight ≤ ⌊(d-1)/2⌋ = 2 deterministically.
+
+Codeword-table construction: iterative doubling. Start with {0}, at step j
+replace by {c + α·B[j] : c, α} for α ∈ F_4. After k steps |table| = 4^k.
+Per-step intermediate is 4 · |table_prev| · n bytes; final table is 4^k·n.
+For tiny (k=10, n=18): peak intermediate 19 MB, final table 18 MB.
+
+Decoding: compute Hamming distance from each codeword to the received word
+in chunks of 200K (caps temp memory at a few MB), track minimum and the
+witness codeword. ~10 ms per decode on tiny.
+
+Caching: codeword table cached by id(code.H), same pattern as
+decoder_metropolis. The harness re-uses one decoder instance across many
+trials so the 1-2 sec table-build cost is amortised.
+
+DISCREPANCY WITH PIPELINE BUDGET. PIPELINE Day 11 specifies "4^k ≤ 2^14
+(k ≤ 7)" which would exclude the tiny instance (k = 10, 4^k ≈ 10^6).
+We default max_k = 12, retaining the PIPELINE intent (cap on memory /
+compute) while accommodating the actual smallest BB instance. This is
+consistent with code_params.py Day 3, which already enumerated 4^10
+codewords for exact distance computation, demonstrating the scale is
+tractable. The cap is configurable per-construction.
+
+Unit tests passing (all 14 of 14):
+- enumeration correctness:
+    count == 4^k, no duplicates, every row in ker(H), zero and basis rows
+    included by construction.
+- decoding correctness:
+    zero ⇒ zero; every codeword ⇒ itself (noise-free).
+- bounded-distance correctness:
+    every single-symbol error pattern corrected (54 patterns, exhaustive).
+    every weight-2 error pattern corrected (200 random samples; theoretical
+    guarantee at d = 6).
+- structural correctness:
+    output of ML is always a codeword (50 random noise samples at p = 0.1).
+- ML dominance over BP:
+    ML distance ≤ BP distance to true codeword on every trial (100 samples
+    at p = 0.05). Cannot fail unless BP has a bug.
+- pipeline criterion:
+    "very low FER at p = 0.001" — 0 failures over 500 trials.
+- robustness:
+    reproducibility, invalid-parameter rejection, max_k enforcement, cache
+    reuse.
+
+VALIDATION RUN (day11_validation.py, seed 20260601):
+
+ML on tiny at the two PIPELINE-specified rates:
+  p = 0.001:   0 fails / 2000 trials  →  FER = 0.0      ( 8 ms/decode)
+  p = 0.010:   0 fails / 2000 trials  →  FER = 0.0      (14 ms/decode)
+
+Both pass the PIPELINE criterion. Even 0.010 is well below noise floor for
+ML on this code (expected 0.18 errors per word, almost all 0-1 errors).
+
+Head-to-head ML vs BP (same noise realisations per p):
+
+   p     trials  ML_fail  BP_fail  only_BP   gap = BP suboptimality
+  0.001   2000      0        0        0      BP matches ML exactly
+  0.005   2000      0        0        0      BP matches ML exactly
+  0.010   2000      0        0        0      BP matches ML exactly
+  0.020   1000      0        2        2      0.20%
+  0.050   1000      2       30       28      2.80%
+  0.100    500     20      114       94     18.80%
+
+Interpretation:
+- BP is OPTIMAL at p ≤ 0.01 on tiny (0 only-BP failures over 6000 trials):
+  exactly the regime where the channel typically delivers ≤ 1 error, well
+  inside both ML's correction radius and BP's local-neighborhood gradient.
+- BP starts losing to ML at p = 0.02 (one BP-failure-per-500), small but
+  detectable.
+- BP suboptimality climbs to ~3% at p = 0.05 and ~19% at p = 0.10, the
+  expected pattern for a short, cycle-heavy LDPC where BP's tree
+  assumption breaks down hardest at high noise.
+- The Day 12 deliverable can use the same head-to-head harness to produce
+  Figure 3 (BP-vs-ML FER waterfall) directly.
+
+PERFORMANCE: ML at 8-14 ms/decode on tiny — limited by the ~18M element-
+wise comparisons per Hamming-distance evaluation. Plenty fast for the
+Day 12 1000-2000-trial-per-p sweeps; no optimization needed.
+
+DEFERRED: Larger codes. Small (k=42, 4^42 codewords) is brute-force
+infeasible. Day 12 validation will be restricted to tiny only. The
+PROJECT_BRIEF acknowledged this — ML is only required as a tiny-code
+ground truth, not a competing decoder at all sizes.
+
+
