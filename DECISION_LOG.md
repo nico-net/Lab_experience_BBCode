@@ -981,3 +981,19 @@ Coarse scan (master seed):
  0.2100   0.9257    -0.0741  CLOSED
  0.2200   0.8911    -0.0969  CLOSED
 
+# Day 17: EXIT prediction vs. simulation
+GF(4) (3,6)-regular ensemble
+
+EXIT threshold (Day 16):  p* = 0.175
+Simulated thresholds: FER=0.5 crossing, linear interp on day13_14 grid.
+
+    code     n   p_c^sim           MC band   gap_sim   gap_pred  status
+    tiny    18    0.1535    [0.142, 0.165]   +14.0%    +12.3%  PASS (<=20%)
+   small    72    0.1251    [0.120, 0.131]   +39.9%    +28.5%  OVER 30% (finite-length)
+  medium   108    0.1289    [0.125, 0.133]   +35.8%    +26.3%  OVER 30% (finite-length)
+   large   144    0.1308    [0.126, 0.136]   +33.8%    +25.2%  OVER 30% (finite-length)
+
+Ordering (p* above all p_c^sim): OK
+Day 15 consistency band p* in [0.09, 0.18]: OK
+
+Interpretation: ordering correct, p* in band. tiny agrees best but its high-p FER is depressed by the small-codeword-space lucky-guess effect, inflating its 0.5-crossing; the cleaner n>=72 codes sit at the 30% edge. Gap conflates Gaussian-EXIT overestimate (+few %) with finite-length depression (-), not a DE bug. Denser p-grid around 0.08-0.14 (Day 18) would sharpen p_c^sim.

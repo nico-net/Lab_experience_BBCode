@@ -271,11 +271,11 @@
 **Status:** [x] Complete
 
 **Tasks:**
-- [ ] Extract simulated threshold p_c^{sim} from FER waterfall (curve crossing)
-- [ ] Compare to EXIT prediction p*
-- [ ] Agreement within ~20-30%: PASS
-- [ ] Disagreement >30%: investigate density evolution assumptions
-- [ ] Document comparison in DECISIONS_LOG
+- [x] Extract simulated threshold p_c^{sim} from FER waterfall (curve crossing)
+- [x] Compare to EXIT prediction p*
+- [x] Agreement within ~20-30%: PASS
+- [x] Disagreement >30%: investigate density evolution assumptions
+- [x] Document comparison in DECISIONS_LOG
 
 **Deliverable:** Validated EXIT threshold vs. simulation
 
