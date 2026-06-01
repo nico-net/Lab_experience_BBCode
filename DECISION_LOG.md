@@ -960,3 +960,24 @@ Files added on Day 15:
 - `decision_log_entry_day15.md`    — this report (paste into DECISION_LOG)
 
 
+# Day 16: BP threshold from EXIT analysis
+GF(4) (3,6)-regular ensemble (d_v=3, d_c=6), q=4
+
+N = 40000 MC samples/point, n_points = 41, tol = 0.002, seeds = 5
+
+p* = 0.1748  (sd = 0.0010)
+per-seed p*: 0.1741, 0.1741, 0.1741, 0.1759, 0.1759
+residual gap at p* (master seed): -0.0030
+
+Coarse scan (master seed):
+      p     I_ch    min_gap  tunnel
+ 0.1400   1.1939    +0.0094  open
+ 0.1500   1.1524    +0.0093  open
+ 0.1600   1.1121    +0.0092  open
+ 0.1700   1.0729    +0.0068  open
+ 0.1800   1.0346    -0.0137  CLOSED
+ 0.1900   0.9974    -0.0341  CLOSED
+ 0.2000   0.9611    -0.0547  CLOSED
+ 0.2100   0.9257    -0.0741  CLOSED
+ 0.2200   0.8911    -0.0969  CLOSED
+

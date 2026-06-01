@@ -254,13 +254,13 @@
 
 ### Day 16 (3 hours): Threshold from EXIT
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
-- [ ] Find p* where EXIT curves just touch (BP threshold prediction)
-- [ ] Plot EXIT curves at p slightly below and above p*
-- [ ] Verify tunnel opens/closes as expected
-- [ ] Create Figure 3: EXIT chart with threshold
+- [x] Find p* where EXIT curves just touch (BP threshold prediction)
+- [x] Plot EXIT curves at p slightly below and above p*
+- [x] Verify tunnel opens/closes as expected
+- [x] Create Figure 3: EXIT chart with threshold
 
 **Deliverable:** Predicted BP threshold p* from EXIT analysis
 
@@ -268,7 +268,7 @@
 
 ### Day 17 (3 hours): EXIT vs. Simulation Validation
 
-**Status:** [ ] Complete
+**Status:** [x] Complete
 
 **Tasks:**
 - [ ] Extract simulated threshold p_c^{sim} from FER waterfall (curve crossing)
