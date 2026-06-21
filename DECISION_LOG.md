@@ -997,3 +997,79 @@ Ordering (p* above all p_c^sim): OK
 Day 15 consistency band p* in [0.09, 0.18]: OK
 
 Interpretation: ordering correct, p* in band. tiny agrees best but its high-p FER is depressed by the small-codeword-space lucky-guess effect, inflating its 0.5-crossing; the cleaner n>=72 codes sit at the 30% edge. Gap conflates Gaussian-EXIT overestimate (+few %) with finite-length depression (-), not a DE bug. Denser p-grid around 0.08-0.14 (Day 18) would sharpen p_c^sim.
+
+
+
+### Day 21 (2026-XX-XX): Stabilizer-vs-logical check for the structural weight-6 codeword
+
+**Decision: the classical d≤6 ceiling does not bound the quantum CSS distance, for all four codes.**
+
+**Context.** Day 18 proved that for any weight-3 GF(4) bivariate bicycle code,
+the vector c = [B·e_j ; A·e_j] satisfies H·c = (AB+BA)·e_j = 0 for every
+basis vector e_j, because AB = BA (commuting shifts) and GF(4) has
+characteristic 2. This forces a weight-6 codeword in ker(H) = [A|B] for
+every j, capping the classical distance at d ≤ 6 for the whole family —
+independent of polynomial choice, ℓ, m, or coefficient assignment.
+
+Per Bravyi et al. 2024, the same matrix H = [A|B] doubles as the X-stabilizer
+check matrix of a quantum CSS code, with Z-stabilizers H^Z = [B^T | A^T]. A
+vector in ker(H^X) is a genuine quantum LOGICAL operator only if it is
+*not* expressible as a combination of Z-stabilizer rows, i.e. not in
+rowspace(H^Z). If c ∈ rowspace(H^Z), it is a stabilizer — physically
+trivial — and does not lower-bound the quantum distance, even though it
+lower-bounds (in fact pins) the classical distance.
+
+This was the open question flagged when the additive/CRSS framing was
+discussed: does relaxing GF(4)-linearity to the additive CRSS code change
+the distance picture? The relaxation does not remove c from the code (the
+kernel of H is unaffected by the linear/additive distinction), so the
+classical ceiling is unconditional either way. The real question was
+whether c constrains the *quantum* distance — answered here.
+
+**Method.** Implemented `stabilizer_check.py`. For each of the four code
+instances, built H^Z = [B^T | A^T] and tested, for every shift position
+j = 0, ..., ℓm−1 (exhaustive, not sampled), whether
+c = [B·e_j ; A·e_j] ∈ rowspace(H^Z) over GF(4), via the rank criterion
+c ∈ rowspace(M) ⟺ rank([M; c]) == rank(M). Implemented with the existing
+`gf4_rref` / `gf4_rank` from `gf4_lib.py` — no new linear algebra, reuses
+machinery already covered by the project's unit tests. rank(H^Z) was
+computed once per code and reused across all j (it does not depend on j).
+Every c was independently re-verified to satisfy H·c = 0 and wt(c) = 6
+before the rowspace test, as a sanity check on the Day 18 theorem.
+
+**Result (exhaustive, all shift positions, all four codes):**
+
+| code   | positions tested | stabilizer | logical |
+|--------|------------------:|-----------:|--------:|
+| tiny   | 9/9               | 9          | 0       |
+| small  | 36/36             | 36         | 0       |
+| medium | 54/54             | 54         | 0       |
+| large  | 72/72             | 72         | 0       |
+
+All 171 tested vectors (9+36+54+72, covering every cyclic shift position
+for every code) are stabilizers. No exceptions, no position-dependence.
+
+**Interpretation.** The classical weight-6 codewords that pin d ≤ 6 are
+exactly the vectors the Z-stabilizer quotient removes. They constrain the
+classical code (ker H) but are physically trivial in the quantum code
+(QC(A,B)) — they do not lower-bound the quantum CSS distance. This is
+consistent with, and gives the structural mechanism for, the gap between
+the classical ceiling found here (d ≤ 6 for all four instances) and
+Bravyi's reported quantum distances for the same algebraic family
+(d = 6, 10, 12, 18 for n = 72, 90, 108, 144).
+
+**Scope of the claim — what this does and does not establish.** This result
+proves that this specific obstruction (the c = [B·e;A·e] vectors) does not
+lower-bound the quantum distance; it does not re-derive or verify Bravyi's
+reported quantum distance values, which come from a separate MIP-based
+search over all logical operators. Section VII should state "the classical
+ceiling does not bound the quantum distance" as a proven result, and cite
+Bravyi's d values as Bravyi's result, not as something re-derived here.
+
+**Outputs:**
+- `stabilizer_check.py` — exhaustive check, all four codes, all shift
+  positions
+- This entry — paste into DECISIONS_LOG.md as the Day 21 prerequisite for
+  Section VII (per PIPELINE.md: "Verify Tanner graph of Analog 3
+  structurally matches CRSS additive code... Document structural match in
+  DECISIONS_LOG")
